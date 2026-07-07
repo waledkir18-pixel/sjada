@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}تسجيل الدخول{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center px-4 py-12">
+  <div class="w-full max-w-md">
+
+    <!-- Logo -->
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl glass mb-4 text-3xl">🐱‍👤</div>
+      <h1 class="text-3xl font-extrabold text-white">موقع زاريـن الالكتروني</h1>
+      <p class="text-white/50 mt-1 text-sm">سجّل دخولك للمتابعة</p>
+    </div>
+
+    <!-- Card -->
+    <div class="glass rounded-3xl p-8 shadow-2xl">
+      <form method="POST" action="{{ url_for('login') }}" class="space-y-5">
+
+        <div>
+          <label class="block text-sm font-medium text-white/70 mb-1.5">البريد الإلكتروني</label>
+          <input type="email" name="email" required placeholder="example@email.com"
+            class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white
+                   placeholder-white/30 focus:outline-none focus:border-purple-400 focus:ring-1
+                   focus:ring-purple-400 transition text-sm" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-white/70 mb-1.5">كلمة المرور</label>
+          <input type="password" name="password" required placeholder="••••••••"
+            class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white
+                   placeholder-white/30 focus:outline-none focus:border-purple-400 focus:ring-1
+                   focus:ring-purple-400 transition text-sm" />
+        </div>
+
+        <button type="submit"
+          class="btn-primary w-full py-3.5 rounded-xl font-bold text-white text-base shadow-lg">
+          تسجيل الدخول ←
+        </button>
+      </form>
+
+      <p class="text-center text-white/40 text-sm mt-6">
+        ليس لديك حساب؟
+        <a href="{{ url_for('signup') }}" class="text-purple-300 hover:text-purple-100 font-medium transition">
+          إنشاء حساب جديد
+        </a>
+      </p>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

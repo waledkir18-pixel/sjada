@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+{% block title %}لوحة التحكم — شراشف زارين{% endblock %}
+
+{% block extra_head %}
+<style>
+  .admin-card { background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.07); }
+  .tab-btn { color:rgba(255,255,255,0.3); border-bottom:2px solid transparent; font-size:0.8rem; letter-spacing:0.06em; padding:0.6rem 0; transition:all 0.2s; }
+  .tab-btn.active,.tab-btn:hover { color:rgba(255,255,255,0.85); border-bottom-color:rgba(255,255,255,0.4); }
+  .form-input { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:0.75rem; padding:0.65rem 1rem; font-size:0.85rem; width:100%; transition:border-color 0.2s; }
+  .form-input:focus { outline:none; border-color:rgba(255,255,255,0.3); }
+  .form-input::placeholder { color:rgba(255,255,255,0.2); }
+  textarea.form-input { resize:vertical; }
+  .btn-add { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.8); font-size:0.8rem; transition:all 0.2s; }
+  .btn-add:hover { background:rgba(255,255,255,0.14); color:#fff; }
+  .btn-del { background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); color:rgba(239,68,68,0.7); font-size:0.75rem; transition:all 0.2s; }
+  .btn-del:hover { background:rgba(239,68,68,0.15); color:#f87171; }
+  .btn-edit { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.5); font-size:0.75rem; transition:all 0.2s; }
+  .btn-edit:hover { background:rgba(255,255,255,0.1); color:#fff; }
+  .btn-approve { background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.25); color:#4ade80; font-size:0.78rem; transition:all 0.2s; }
+  .btn-approve:hover { background:rgba(34,197,94,0.2); }
+  .btn-reject { background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); color:#f87171; font-size:0.78rem; transition:all 0.2s; }
+  .btn-reject:hover { background:rgba(239,68,68,0.15); }
+  .stat-box { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); }
+  .divider { background:linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent); height:1px; }
+  .status-pending  { background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.2); color:#fbbf24; }
+  .status-approved { background:rgba(34,197,94,0.1);  border:1px solid rgba(34,197,94,0.2);  color:#22c55e; }
+  .status-rejected { background:rgba(239,68,68,0.1);  border:1px solid rgba(239,68,68,0.2);  color:#ef4444; }
+  .edit-form { display:none; }
+
+  /* Chat */
+  .chat-wrap { max-height:280px; overflow-y:auto; scroll-behavior:smooth; }
+  .chat-wrap::-webkit-scrollbar { width:3px; }
+  .chat-wrap::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:4px; }
+  .bubble-user  { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.09); border-radius:14px 14px 4px 14px; max-width:78%; margin-right:auto; }
+  .bubble-admin { background:rgba(34,197,94,0.07);   border:1px solid rgba(34,197,94,0.13);  border-radius:14px 14px 14px 4px; max-width:78%; margin-left:auto; }
+  .bubble-status { background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:9px; }
+  .chat-input { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:0.75rem; padding:0.55rem 0.9rem; font-size:0.82rem; flex:1; resize:none; transition:border-color 0.2s; }
+  .chat-input:focus { outline:none; border-color:rgba(255,255,255,0.25); }
+  .chat-input::placeholder { color:rgba(255,255,255,0.2); }
+  .send-btn { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.13); color:rgba(255,255,255,0.65); border-radius:0.75rem; padding:0.55rem 1rem; font-size:0.78rem; transition:all 0.2s; white-space:nowrap; }
+  .send-btn:hover { background:rgba(255,255,255,0.13); color:#fff; }
+  .unread-badge { background:#4ade80; color:#000; font-size:0.6rem; font-weight:700; border-radius:999px; padding:1px 6px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-6 py-10">
+
+  <!-- Header -->
+  <div class="mb-10">
+    <p class="text-white/20 text-xs tracking-[0.25em] uppercase mb-2">شراشف زارين</p>
+    <div class="flex items-end justify-between flex-wrap gap-4">
+      <h1 class="text-3xl font-light text-white">لوحة التحكم</h1>
+      <p class="text-white/25 text-xs">{{ store_email }}</p>
+    </div>
+    <div class="divider mt-6"></div>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+    <div class="stat-box rounded-xl p-5 text-center">
+      <p class="text-3xl font-light text-white mb-1">{{ user_count }}</p>
+      <p class="text-white/30 text-xs">مستخدم</p>
+    </div>
+    <div class="stat-box rounded-xl p-5 text-center">
+      <p class="text-3xl font-light text-white mb-1">{{ product_items|length }}</p>
+      <p class="text-white/30 text-xs">منتج</p>
+    </div>
+    <div class="stat-box rounded-xl p-5 text-center">
+      <p class="text-3xl font-light text-white mb-1">{{ orders|length }}</p>
+      <p class="text-white/30 text-xs">طلب كلي</p>
+    </div>
+    <div class="stat-box rounded-xl p-5 text-center">
+      <p class="text-3xl font-light text-yellow-400 mb-1">{{ pending_count }}</p>
+      <p class="text-white/30 text-xs">معلّق</p>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex gap-6 mb-8 border-b border-white/06">
+    <button class="tab-btn active" onclick="showTab('products')">المنتجات</button>
+    <button class="tab-btn"       onclick="showTab('categories')">التصنيفات</button>
+    <button class="tab-btn"       onclick="showTab('orders')">
+      الطلبات {% if pending_count %}<span class="text-yellow-400">({{ pending_count }})</span>{% endif %}
+    </button>
+    <button class="tab-btn"       onclick="showTab('settings')">الرسائل</button>
+  </div>
+
+  <!-- ══ Products ══ -->
+  <div id="tab-products">
+    <div class="admin-card rounded-2xl p-7 mb-6">
+      <h2 class="text-white/40 text-xs tracking-widest uppercase mb-5">إضافة منتج</h2>
+      <form method="POST" action="{{ url_for('admin_add_product') }}" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <input name="name" class="form-input" placeholder="اسم المنتج *" required />
+        <input name="price" type="number" step="0.01" min="0" class="form-input" placeholder="السعر (0 = حسب الطلب)" />
+        <select name="category" class="form-input" required>
+          <option value="" disabled selected>التصنيف *</option>
+          {% for cat in product_cats %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}
+        </select>
+        <input name="badge" class="form-input" placeholder="شارة (جديد، الأكثر مبيعاً...)" />
+        <textarea name="description" class="form-input md:col-span-2" rows="2" placeholder="وصف المنتج"></textarea>
+        <div class="md:col-span-2"><button type="submit" class="btn-add px-7 py-2.5 rounded-xl">+ إضافة</button></div>
+      </form>
+    </div>
+    <div class="admin-card rounded-2xl p-7">
+      <h2 class="text-white/40 text-xs tracking-widest uppercase mb-5">المنتجات ({{ product_items|length }})</h2>
+      {% if product_items %}
+      <div class="space-y-3">
+        {% for item in product_items %}
+        <div>
+          <div class="flex items-center gap-3 p-4 rounded-xl" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05)">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-white text-sm font-medium">{{ item.name }}</span>
+                <span class="text-white/25 text-xs px-2 py-0.5 rounded-full" style="background:rgba(255,255,255,0.05)">{{ item.category }}</span>
+                {% if item.badge %}<span class="text-white/30 text-xs">— {{ item.badge }}</span>{% endif %}
+              </div>
+              <p class="text-white/20 text-xs mt-0.5">{{ item.description or '—' }}</p>
+            </div>
+            <span class="text-white/35 text-sm whitespace-nowrap">{% if item.price > 0 %}{{ "%.0f"|format(item.price) }} ر{% else %}حسب الطلب{% endif %}</span>
+            <button onclick="toggleEdit('{{ item.id }}')" class="btn-edit px-3 py-1.5 rounded-lg">تعديل</button>
+            <form method="POST" action="{{ url_for('admin_delete_product', product_id=item.id) }}" onsubmit="return confirm('حذف؟')">
+              <button type="submit" class="btn-del px-3 py-1.5 rounded-lg">حذف</button>
+            </form>
+          </div>
+          <div id="edit-{{ item.id }}" class="edit-form mt-2 p-5 rounded-xl" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08)">
+            <form method="POST" action="{{ url_for('admin_edit_product', product_id=item.id) }}" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input name="name" value="{{ item.name }}" class="form-input" required />
+              <input name="price" type="number" step="0.01" value="{{ item.price }}" class="form-input" />
+              <select name="category" class="form-input">{% for cat in product_cats %}<option value="{{ cat }}" {% if cat==item.category %}selected{% endif %}>{{ cat }}</option>{% endfor %}</select>
+              <input name="badge" value="{{ item.badge }}" class="form-input" placeholder="شارة" />
+              <textarea name="description" class="form-input md:col-span-2" rows="2">{{ item.description }}</textarea>
+              <div class="md:col-span-2 flex gap-3">
+                <button type="submit" class="btn-add px-6 py-2 rounded-xl">حفظ</button>
+                <button type="button" onclick="toggleEdit('{{ item.id }}')" class="btn-edit px-6 py-2 rounded-xl">إلغاء</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}<p class="text-white/20 text-sm text-center py-8">لا توجد منتجات</p>{% endif %}
+    </div>
+  </div>
+
+  <!-- ══ Categories ══ -->
+  <div id="tab-categories" style="display:none">
+    <div class="admin-card rounded-2xl p-7 mb-6">
+      <h2 class="text-white/40 text-xs tracking-widest uppercase mb-5">إضافة تصنيف</h2>
+      <form method="POST" action="{{ url_for('admin_add_category') }}" class="flex gap-3">
+        <input name="category" class="form-input flex-1" placeholder="اسم التصنيف *" required />
+        <button type="submit" class="btn-add px-6 py-2.5 rounded-xl whitespace-nowrap">+ إضافة</button>
+      </form>
+    </div>
+    <div class="admin-card rounded-2xl p-7">
+      {% if product_cats %}
+      <div class="space-y-2">
+        {% for cat in product_cats %}
+        <div class="flex items-center justify-between p-4 rounded-xl" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05)">
+          <span class="text-white/55 text-sm">{{ cat }}</span>
+          <form method="POST" action="{{ url_for('admin_delete_category') }}" onsubmit="return confirm('حذف {{ cat }}؟')">
+            <input type="hidden" name="category" value="{{ cat }}" />
+            <button type="submit" class="btn-del px-3 py-1.5 rounded-lg">حذف</button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}<p class="text-white/20 text-sm text-center py-8">لا توجد تصنيفات</p>{% endif %}
+    </div>
+  </div>
+
+  <!-- ══ Orders ══ -->
+  <div id="tab-orders" style="display:none">
+    <div class="admin-card rounded-2xl p-7">
+      <h2 class="text-white/40 text-xs tracking-widest uppercase mb-5">الطلبات ({{ orders|length }})</h2>
+      {% if orders %}
+      <div class="space-y-5">
+        {% for order in orders|sort(attribute='created_at', reverse=True) %}
+        {% set msgs = order.get('messages', []) %}
+        {% set user_unread = msgs | selectattr('sender','eq','user') | selectattr('read_by_admin','eq',False) | list | length %}
+
+        <div class="p-5 rounded-xl" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06)" id="admin-order-{{ order.id }}">
+
+          <!-- Order header -->
+          <div class="flex items-start justify-between gap-4 flex-wrap mb-4">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <p class="text-white text-sm font-medium">{{ order.product_name }}</p>
+                {% if user_unread %}<span class="unread-badge">{{ user_unread }} جديد</span>{% endif %}
+              </div>
+              <p class="text-white/35 text-xs">{{ order.user_name }} — {{ order.user_email }}</p>
+              {% if order.color %}<p class="text-white/25 text-xs mt-1">اللون: {{ order.color }}</p>{% endif %}
+              {% if order.custom_size %}<p class="text-white/25 text-xs">المقاس: {{ order.custom_size }}</p>{% endif %}
+              {% if order.notes %}<p class="text-white/20 text-xs italic mt-1">{{ order.notes }}</p>{% endif %}
+            </div>
+            <div class="flex flex-col items-end gap-2">
+              {% if order.price > 0 %}<span class="text-white/40 text-sm">{{ "%.0f"|format(order.price) }} ريال</span>{% endif %}
+              <span class="text-white/15 text-xs">{{ order.created_at[:16].replace('T',' ') }}</span>
+              {% if order.status == 'pending' %}<span class="status-pending text-xs px-3 py-1 rounded-full">معلّق</span>
+              {% elif order.status == 'approved' %}<span class="status-approved text-xs px-3 py-1 rounded-full">مقبول ✓</span>
+              {% elif order.status == 'rejected' %}<span class="status-rejected text-xs px-3 py-1 rounded-full">مرفوض</span>{% endif %}
+            </div>
+          </div>
+
+          <!-- ── Chat ── -->
+          <div class="mt-3 pt-3 border-t border-white/05">
+            <button class="text-white/25 hover:text-white/55 text-xs flex items-center gap-2 mb-3 transition"
+                    onclick="toggleAdminChat('{{ order.id }}')">
+              <svg viewBox="0 0 20 20" fill="none" class="w-3.5 h-3.5" stroke="currentColor" stroke-width="1.5"><path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v7a2 2 0 01-2 2H6l-4 3V5z"/></svg>
+              المحادثة{% if msgs %} ({{ msgs|length }}){% endif %}
+              {% if user_unread %} — <span class="text-green-400">{{ user_unread }} رسالة جديدة</span>{% endif %}
+            </button>
+
+            <div id="admin-chat-{{ order.id }}" class="{{ 'block' if user_unread else 'hidden' }}">
+              {% if msgs %}
+              <div class="chat-wrap p-3 space-y-3 mb-3 rounded-xl"
+                   style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.05)"
+                   id="admin-msgs-{{ order.id }}">
+                {% for msg in msgs %}
+                {% if msg.get('is_status_msg') %}
+                <div class="bubble-status px-4 py-2 mx-auto text-center" style="max-width:90%">
+                  <p class="text-white/30 text-xs leading-relaxed" style="white-space:pre-wrap">{{ msg.text }}</p>
+                  <p class="text-white/15 text-xs mt-1">{{ msg.time[:16].replace('T',' ') }}</p>
+                </div>
+                {% elif msg.sender == 'user' %}
+                <div class="bubble-user px-4 py-2.5">
+                  <p class="text-xs text-white/35 mb-1">{{ msg.sender_name }}</p>
+                  <p class="text-white/65 text-sm leading-relaxed">{{ msg.text }}</p>
+                  <p class="text-white/15 text-xs mt-1">{{ msg.time[:16].replace('T',' ') }}</p>
+                </div>
+                {% else %}
+                <div class="bubble-admin px-4 py-2.5">
+                  <p class="text-xs text-green-400/55 mb-1">{{ msg.sender_name }}</p>
+                  <p class="text-white/65 text-sm leading-relaxed">{{ msg.text }}</p>
+                  <p class="text-white/15 text-xs mt-1">{{ msg.time[:16].replace('T',' ') }}</p>
+                </div>
+                {% endif %}
+                {% endfor %}
+              </div>
+              {% endif %}
+              <!-- Admin send -->
+              <form method="POST" action="{{ url_for('admin_send_message', order_id=order.id) }}"
+                    class="flex gap-2" onsubmit="return !!this.querySelector('textarea').value.trim()">
+                <textarea name="message" rows="1" class="chat-input" placeholder="رد على العميل..."></textarea>
+                <button type="submit" class="send-btn">إرسال</button>
+              </form>
+            </div>
+          </div>
+
+          <!-- ── Approve / Reject (pending only) ── -->
+          {% if order.status == 'pending' %}
+          <div class="mt-4 pt-4 border-t border-white/05 space-y-3">
+            <p class="text-white/25 text-xs tracking-wide">إجراء الطلب:</p>
+            <form method="POST" action="{{ url_for('admin_update_order', order_id=order.id) }}">
+              <input type="hidden" name="status" value="approved" />
+              <textarea name="message" rows="3" class="form-input text-xs mb-2">{{ settings.approve_message }}</textarea>
+              <button type="submit" class="btn-approve px-5 py-2 rounded-xl w-full">قبول الطلب وإرسال الرسالة ✓</button>
+            </form>
+            <form method="POST" action="{{ url_for('admin_update_order', order_id=order.id) }}">
+              <input type="hidden" name="status" value="rejected" />
+              <textarea name="message" rows="2" class="form-input text-xs mb-2">{{ settings.reject_message }}</textarea>
+              <button type="submit" class="btn-reject px-5 py-2 rounded-xl w-full" onclick="return confirm('تأكيد الرفض؟')">رفض الطلب ✕</button>
+            </form>
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}<p class="text-white/20 text-sm text-center py-8">لا توجد طلبات</p>{% endif %}
+    </div>
+  </div>
+
+  <!-- ══ Settings ══ -->
+  <div id="tab-settings" style="display:none">
+    <div class="admin-card rounded-2xl p-7">
+      <h2 class="text-white/40 text-xs tracking-widest uppercase mb-2">قوالب الرسائل</h2>
+      <p class="text-white/20 text-xs mb-6">تُملأ تلقائياً عند القبول أو الرفض — يمكن تعديلها لكل طلب بشكل منفصل.</p>
+      <form method="POST" action="{{ url_for('admin_save_messages') }}" class="space-y-6">
+        <div>
+          <label class="block text-white/35 text-xs mb-2">رسالة القبول <span class="text-green-500/50">✓</span></label>
+          <textarea name="approve_message" rows="6" class="form-input text-sm">{{ settings.approve_message }}</textarea>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <label class="block text-white/35 text-xs mb-2">رسالة الرفض <span class="text-red-500/50">✕</span></label>
+          <textarea name="reject_message" rows="5" class="form-input text-sm">{{ settings.reject_message }}</textarea>
+        </div>
+        <button type="submit" class="btn-add px-8 py-3 rounded-xl">حفظ القوالب</button>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const TABS = ['products','categories','orders','settings'];
+function showTab(tab) {
+  TABS.forEach(t => document.getElementById('tab-'+t).style.display = t===tab?'':'none');
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', TABS[i]===tab));
+  history.replaceState(null,'','#tab-'+tab);
+}
+function toggleEdit(id) {
+  const el = document.getElementById('edit-'+id);
+  el.style.display = el.style.display==='block' ? 'none' : 'block';
+}
+function toggleAdminChat(id) {
+  const el = document.getElementById('admin-chat-'+id);
+  el.classList.toggle('hidden');
+  if (!el.classList.contains('hidden')) {
+    const msgs = document.getElementById('admin-msgs-'+id);
+    if (msgs) msgs.scrollTop = msgs.scrollHeight;
+  }
+}
+window.addEventListener('DOMContentLoaded', () => {
+  const hash = location.hash.replace('#tab-','');
+  if (TABS.includes(hash)) showTab(hash);
+  document.querySelectorAll('[id^="admin-msgs-"]').forEach(el => el.scrollTop = el.scrollHeight);
+});
+</script>
+{% endblock %}

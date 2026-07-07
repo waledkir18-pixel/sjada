@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}طلباتي — شراشف زارين{% endblock %}
+
+{% block extra_head %}
+<style>
+  .order-card { background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.07); transition:border-color 0.2s; }
+  .status-pending  { background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.2); color:#fbbf24; }
+  .status-approved { background:rgba(34,197,94,0.1);  border:1px solid rgba(34,197,94,0.2);  color:#22c55e; }
+  .status-rejected { background:rgba(239,68,68,0.1);  border:1px solid rgba(239,68,68,0.2);  color:#ef4444; }
+  .divider { background:linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent); height:1px; }
+
+  /* Chat bubble styles */
+  .chat-wrap { max-height: 320px; overflow-y: auto; scroll-behavior: smooth; }
+  .chat-wrap::-webkit-scrollbar { width: 3px; }
+  .chat-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius:4px; }
+
+  .bubble-user {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px 16px 4px 16px;
+    max-width: 78%;
+    margin-right: auto;
+  }
+  .bubble-admin {
+    background: rgba(34,197,94,0.08);
+    border: 1px solid rgba(34,197,94,0.15);
+    border-radius: 16px 16px 16px 4px;
+    max-width: 78%;
+    margin-left: auto;
+  }
+  .bubble-status {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+  }
+  .chat-input {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #fff;
+    border-radius: 0.75rem;
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    transition: border-color 0.2s;
+    resize: none;
+    flex: 1;
+  }
+  .chat-input:focus { outline:none; border-color: rgba(255,255,255,0.25); }
+  .chat-input::placeholder { color: rgba(255,255,255,0.2); }
+  .send-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.7);
+    border-radius: 0.75rem;
+    padding: 0.6rem 1.2rem;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .send-btn:hover { background:rgba(255,255,255,0.14); color:#fff; }
+  .toggle-chat {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 0.05em;
+    transition: color 0.2s;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .toggle-chat:hover { color: rgba(255,255,255,0.65); }
+  .unread-dot {
+    width: 7px; height: 7px;
+    background: #4ade80;
+    border-radius: 50%;
+    display: inline-block;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-6 py-12">
+
+  <div class="mb-10">
+    <p class="text-white/20 text-xs tracking-[0.25em] uppercase mb-3">شراشف زارين</p>
+    <h1 class="text-3xl font-light text-white">طلباتي</h1>
+    <div class="divider mt-6"></div>
+  </div>
+
+  {% if orders %}
+  <div class="space-y-5">
+    {% for order in orders %}
+    {% set msgs = order.get('messages', []) %}
+    {% set has_unread = msgs | selectattr('sender','eq','admin') | selectattr('read_by_user','eq',False) | list | length > 0 %}
+
+    <div class="order-card rounded-2xl p-6" id="order-{{ order.id }}">
+
+      <!-- Order header -->
+      <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div class="flex-1">
+          <h3 class="text-white font-medium mb-1">{{ order.product_name }}</h3>
+          <p class="text-white/30 text-xs">{{ order.category }}</p>
+          {% if order.color %}<p class="text-white/25 text-xs mt-1">اللون: {{ order.color }}</p>{% endif %}
+          {% if order.custom_size %}<p class="text-white/25 text-xs">المقاس: {{ order.custom_size }}</p>{% endif %}
+          {% if order.notes %}<p class="text-white/20 text-xs italic mt-1">{{ order.notes }}</p>{% endif %}
+        </div>
+        <div class="flex flex-col items-end gap-2">
+          {% if order.price > 0 %}
+          <span class="text-white/45 text-sm">{{ "%.0f"|format(order.price) }} ريال</span>
+          {% else %}
+          <span class="text-white/25 text-xs">حسب التفصيل</span>
+          {% endif %}
+          <span class="text-white/15 text-xs">{{ order.created_at[:10] }}</span>
+          {% if order.status == 'pending' %}
+          <span class="status-pending text-xs px-3 py-1 rounded-full">قيد المراجعة</span>
+          {% elif order.status == 'approved' %}
+          <span class="status-approved text-xs px-3 py-1 rounded-full">مقبول ✓</span>
+          {% elif order.status == 'rejected' %}
+          <span class="status-rejected text-xs px-3 py-1 rounded-full">مرفوض</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Chat toggle button -->
+      <div class="mt-4 pt-4 border-t border-white/05 flex items-center justify-between">
+        <button class="toggle-chat" onclick="toggleChat('{{ order.id }}')">
+          {% if has_unread %}<span class="unread-dot"></span>{% endif %}
+          <svg viewBox="0 0 20 20" fill="none" class="w-3.5 h-3.5" stroke="currentColor" stroke-width="1.5">
+            <path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v7a2 2 0 01-2 2H6l-4 3V5z"/>
+          </svg>
+          {% if msgs|length > 0 %}
+            المحادثة ({{ msgs|length }})
+            {% if has_unread %} — <span class="text-green-400">رسالة جديدة</span>{% endif %}
+          {% else %}
+            ابدأ محادثة مع المتجر
+          {% endif %}
+        </button>
+      </div>
+
+      <!-- Chat section (hidden by default, shown if has messages or unread) -->
+      <div id="chat-{{ order.id }}" class="{{ 'block' if has_unread else 'hidden' }} mt-3">
+
+        <!-- Messages -->
+        {% if msgs %}
+        <div class="chat-wrap p-3 space-y-3 mb-3 rounded-xl"
+             style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.05)"
+             id="msgs-{{ order.id }}">
+          {% for msg in msgs %}
+          {% if msg.get('is_status_msg') %}
+          <div class="bubble-status px-4 py-2 mx-auto text-center" style="max-width:90%">
+            <p class="text-white/35 text-xs leading-relaxed" style="white-space:pre-wrap">{{ msg.text }}</p>
+            <p class="text-white/15 text-xs mt-1">{{ msg.time[:16].replace('T',' ') }}</p>
+          </div>
+          {% elif msg.sender == 'user' %}
+          <div class="bubble-user px-4 py-2.5">
+            <p class="text-white/70 text-sm leading-relaxed">{{ msg.text }}</p>
+            <p class="text-white/20 text-xs mt-1">{{ msg.time[:16].replace('T',' ') }}</p>
+          </div>
+          {% else %}
+          <div class="bubble-admin px-4 py-2.5">
+            <p class="text-xs text-green-400/60 mb-1 font-medium">{{ msg.sender_name }}</p>
+            <p class="text-white/70 text-sm leading-relaxed">{{ msg.text }}</p>
+            <p class="text-white/20 text-xs mt-1">{{ msg.time[:16].replace('T',' ') }}</p>
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-white/20 text-xs mb-3">لا توجد رسائل بعد</div>
+        {% endif %}
+
+        <!-- Send message form -->
+        <form method="POST" action="{{ url_for('user_send_message', order_id=order.id) }}"
+              class="flex gap-2" onsubmit="return validateMsg(this)">
+          <textarea name="message" rows="1" class="chat-input" placeholder="اكتب رسالة للمتجر..."></textarea>
+          <button type="submit" class="send-btn">إرسال</button>
+        </form>
+
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="text-center py-24">
+    <p class="text-white/10 text-5xl mb-4">◻</p>
+    <p class="text-white/25 text-sm mb-6">لا توجد طلبات بعد</p>
+    <a href="{{ url_for('store') }}" class="text-white/35 hover:text-white/65 text-sm underline transition">تصفح المتجر</a>
+  </div>
+  {% endif %}
+
+  <div class="mt-10 text-center">
+    <a href="{{ url_for('store') }}" class="text-white/20 hover:text-white/50 text-xs tracking-widest uppercase transition">← العودة للمتجر</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function toggleChat(id) {
+  const el = document.getElementById('chat-' + id);
+  el.classList.toggle('hidden');
+  if (!el.classList.contains('hidden')) {
+    const msgs = document.getElementById('msgs-' + id);
+    if (msgs) msgs.scrollTop = msgs.scrollHeight;
+  }
+}
+function validateMsg(form) {
+  const ta = form.querySelector('textarea');
+  if (!ta.value.trim()) { ta.focus(); return false; }
+  return true;
+}
+// Auto-scroll to order from hash
+window.addEventListener('DOMContentLoaded', () => {
+  const hash = location.hash;
+  if (hash && hash.startsWith('#order-')) {
+    const el = document.querySelector(hash);
+    if (el) { el.scrollIntoView({behavior:'smooth'}); }
+  }
+  // scroll all open chats to bottom
+  document.querySelectorAll('[id^="msgs-"]').forEach(el => {
+    el.scrollTop = el.scrollHeight;
+  });
+});
+</script>
+{% endblock %}
