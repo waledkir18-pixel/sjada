@@ -1,0 +1,33 @@
+[
+  {
+    "id": "dd969169-782c-4caa-9e55-07f8592c4642",
+    "product_id": "3830bd71-8e13-4799-8c12-e6d9767cd840",
+    "product_name": "شرشف ساتان ملكي",
+    "price": 145.0,
+    "category": "شراشف جاهزة",
+    "user_id": "91bc3409-0e28-4327-9e3a-d21e9940b385",
+    "user_name": "WALEEED1",
+    "user_email": "waledkir18@gmail.com",
+    "notes": "",
+    "custom_size": "",
+    "color": "",
+    "status": "approved",
+    "created_at": "2026-06-28T11:11:01.396971",
+    "updated_at": "2026-06-28T11:15:47.013084"
+  },
+  {
+    "id": "bfa997d9-da9b-409a-8208-783844000f25",
+    "product_id": "098d091f-b776-4969-93d2-e2cd9368c346",
+    "product_name": "تفصيل شرشف بمقاساتك",
+    "price": 0,
+    "category": "تفصيل شراشف",
+    "user_id": "54e2805e-af88-4a4c-aa94-828271d01978",
+    "user_name": "زرمينة",
+    "user_email": "admin@family.com",
+    "notes": "",
+    "custom_size": "",
+    "color": "",
+    "status": "pending",
+    "created_at": "2026-07-02T21:31:53.530721"
+  }
+]
